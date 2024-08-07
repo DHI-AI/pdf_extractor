@@ -62,23 +62,23 @@ def extract_by_components(pdf_file):
             extract_image_block_types=["Table", "Image"],
             extract_image_block_to_payload=True
         )
-        rows_to_insert = []
+        all_components = []
         sequence_id = 1
         for element in elements:
             if element.category in ['Image', 'Table']:
                 image_base64 = element.metadata.image_base64
-                rows_to_insert.append({'sequence_id': sequence_id,
+                all_components.append({'sequence_id': sequence_id,
                                        'content_type': 'image',
                                        'disclosure_content_image': image_base64
                                        }
                                       )
             else:
-                rows_to_insert.append({'sequence_id': sequence_id,
+                all_components.append({'sequence_id': sequence_id,
                                        'content_type': 'text',
                                        'content_text': element.text
                                        }
                                       )
             sequence_id += 1
-        return rows_to_insert
+        return all_components
     except Exception as e:
         raise Exception(e)
