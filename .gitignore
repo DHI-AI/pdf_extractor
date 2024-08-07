@@ -1,0 +1,10 @@
+/.idea
+venv/
+.venv
+.env.development
+*.log
+.env
+.vscode
+*/__pycache__
+__pycache__
+*.pdf
