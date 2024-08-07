@@ -8,10 +8,4 @@ setup(
         'pillow',
         'unstructured[pdf]'
     ],
-    entry_points={
-        'console_scripts': [
-            'extract-content=pdf_extractor:extract_whole_content',
-            'extract-components=pdf_extractor:extract_by_components',
-        ],
-    },
 )
