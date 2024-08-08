@@ -14,3 +14,9 @@ pip install git+https://github.com/DHI-AI/pdf_extractor.git
 ```
 pdf_extractor @ git+https://github.com/DHI-AI/pdf_extractor.git
 ```
+
+### Importing the module
+
+```commandline
+from pdf_extractor.pdf_extractor import function
+```
