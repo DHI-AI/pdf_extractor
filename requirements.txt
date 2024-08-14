@@ -1,0 +1,9 @@
+openai~=1.40.6
+boto3~=1.28.3
+pytesseract~=0.3.10
+unstructured~=0.14.10
+unstructured[pdf]
+botocore~=1.31.3
+pillow~=10.3.0
+setuptools~=68.2.0
+python-dotenv~=0.21.1
