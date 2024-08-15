@@ -1,11 +1,83 @@
 import fitz
 import logging
 from unstructured.partition.pdf import partition_pdf
-
+import openai
+import boto3
+from botocore.exceptions import NoCredentialsError
+import pytesseract
+from PIL import Image
+import os
+from base64 import b64decode
+from io import BytesIO
+from dotenv import load_dotenv
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO)
+load_dotenv()
 
+openai.api_key  = os.environ.get('OPENAI_API_KEY')
+
+def generate_image_summary(bucket_name, key):
+  response = openai.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+      {
+        "role": "user",
+        "content": [
+          {"type": "text", "text": "Summarize What’s in this image?"},
+          {
+            "type": "image_url",
+            "image_url": {
+              "url": f"https://{bucket_name}.s3.{os.environ.get('AWS_REGION')}.amazonaws.com/{key}",
+            },
+          },
+        ],
+      }
+    ],
+    max_tokens=300,
+  )
+  summary = response.choices[0].message.content
+  return summary
+
+def upload_to_s3(local_file, bucket_name, s3_file):
+    s3 = boto3.client('s3',
+                      aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+                      aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY')
+                      )
+
+    try:
+        s3.upload_file(local_file, bucket_name, s3_file)
+        print(f"Upload Successful: {s3_file}")
+        return True
+    except FileNotFoundError:
+        print("The file was not found")
+        return False
+    except NoCredentialsError:
+        print("Credentials not available")
+        return False
+
+def use_pytesseract(image_file):
+    # Load the image from a local path
+    image = Image.open(image_file)
+
+    # Extract text from the image using pytesseract
+    extracted_text = pytesseract.image_to_string(image)
+
+    # Now pass the extracted text to GPT-4 for summarization
+    response = openai.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+      {
+        "role": "user",
+        "content": [
+          {"type": "text", "text": f"Summarize the {extracted_text}"},
+        ],
+      }
+    ],
+    max_tokens=300,
+    )
+    summary = response.choices[0].message.content
+    return summary
 
 def extract_using_pymupdf(temp_pdf):
     logger.info(f"Extracting using pymupdf: {temp_pdf}")
@@ -22,23 +94,48 @@ def extract_using_pymupdf(temp_pdf):
     doc.close()
     return content
 
-
 def count_pages(pdf_path):
     doc = fitz.open(pdf_path)
     return doc.page_count
 
-
-def extract_whole_content(pdf_file):
+def extract_whole_content(pdf_file, use_tesseract=True):
     try:
         page_nos = count_pages(pdf_file)
         logger.info(f'Total no of pages: {str(page_nos)}.')
         if page_nos < 80:
             elements = partition_pdf(
                 filename=pdf_file,
-                strategy="hi_res"
+                strategy="hi_res",
+                extract_images_in_pdf=True,
+                extract_image_block_types=["Table", "Image"],
+                extract_image_block_to_payload=True
             )
             content = ''
             for element in elements:
+                if element.category == 'Table':
+                    if element.metadata.image_base64:
+
+                        # Decode the base64 image
+                        image_data = b64decode(element.metadata.image_base64)
+                        image = Image.open(BytesIO(image_data))
+
+                        # Create a unique local file name
+                        local_image_file = 'pdf-temp-image.jpg'
+
+                        # Save the image locally as a .jpg file
+                        image.save(local_image_file, format='JPEG')
+
+                        # For now using pytesseract is default True, if you want to use only GPT pass use_tesseract = False
+                        if use_tesseract:
+                            summary = use_pytesseract(local_image_file)
+
+                        else:
+                            # Upload to S3
+                            upload_to_s3(local_image_file, os.environ.get('PUBLIC_S3_BUCKET'), 'temp_images/pdf-temp-image.jpg')
+                            summary = generate_image_summary(os.environ.get('PUBLIC_S3_BUCKET'), 'temp_images/pdf-temp-image.jpg')
+                        if summary:
+                            content += f"\n\n{str(summary)}"
+                        os.remove(local_image_file)
                 if element.category == 'Image':
                     image_text = element.text
                     if image_text:
@@ -51,7 +148,6 @@ def extract_whole_content(pdf_file):
         return content
     except Exception as e:
         raise Exception(e)
-
 
 def extract_by_components(pdf_file):
     try:
