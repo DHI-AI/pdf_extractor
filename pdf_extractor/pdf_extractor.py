@@ -62,6 +62,8 @@ def use_pytesseract(image_file):
 
     # Extract text from the image using pytesseract
     extracted_text = pytesseract.image_to_string(image)
+    if not extracted_text or extracted_text == '\x0c':
+        return None
 
     # Now pass the extracted text to GPT-4 for summarization
     response = openai.chat.completions.create(
@@ -106,6 +108,7 @@ def extract_whole_content(pdf_file, use_tesseract=True):
             elements = partition_pdf(
                 filename=pdf_file,
                 strategy="hi_res",
+                hi_res_model_name='yolox',
                 extract_images_in_pdf=True,
                 extract_image_block_types=["Table", "Image"],
                 extract_image_block_to_payload=True
@@ -126,10 +129,18 @@ def extract_whole_content(pdf_file, use_tesseract=True):
                         image.save(local_image_file, format='JPEG')
 
                         # For now using pytesseract is default True, if you want to use only GPT pass use_tesseract = False
-                        if use_tesseract:
-                            summary = use_pytesseract(local_image_file)
+                        summary = None
+                        try:
+                            if use_tesseract:
+                                summary = use_pytesseract(local_image_file)
+                        except Exception as e:
+                            logger.error(f"Exception occurred while using Tesseract: {e}")
+                            upload_to_s3(local_image_file, os.environ.get('PUBLIC_S3_BUCKET'),
+                                         'temp_images/pdf-temp-image.jpg')
+                            summary = generate_image_summary(os.environ.get('PUBLIC_S3_BUCKET'),
+                                                             'temp_images/pdf-temp-image.jpg')
 
-                        else:
+                        if summary is None or not pytesseract:
                             # Upload to S3
                             upload_to_s3(local_image_file, os.environ.get('PUBLIC_S3_BUCKET'), 'temp_images/pdf-temp-image.jpg')
                             summary = generate_image_summary(os.environ.get('PUBLIC_S3_BUCKET'), 'temp_images/pdf-temp-image.jpg')
