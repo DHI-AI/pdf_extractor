@@ -24,6 +24,7 @@ load_dotenv()
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 ocr = PaddleOCR(use_angle_cls=True, lang="en")
+local_llm_url = os.getenv("LOCAL_LLM_URL")
 
 
 def generate_image_summary(bucket_name, key):
@@ -113,7 +114,7 @@ def call_local_llm(content, model_name="llama3.1:latest"):
         "stream": False,
         "options": {"temperature": 0, "num_ctx": 10000},
     }
-    response = requests.post("http://103.133.98.205:11434/api/generate", json=payload)
+    response = requests.post(local_llm_url, json=payload)
 
     response_json = response.json()
 
