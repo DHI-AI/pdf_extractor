@@ -1,6 +1,6 @@
-import nltk
+# import nltk
 
-nltk.download("punkt")
+# nltk.download("punkt")
 
 import fitz
 import logging
@@ -14,8 +14,8 @@ import os
 from base64 import b64decode
 from io import BytesIO
 from dotenv import load_dotenv
-from paddleocr import PaddleOCR
-import requests
+# from paddleocr import PaddleOCR
+# import requests
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO)
@@ -23,8 +23,8 @@ load_dotenv()
 
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-ocr = PaddleOCR(use_angle_cls=True, lang="en")
-local_llm_url = os.getenv("LOCAL_LLM_URL")
+# ocr = PaddleOCR(use_angle_cls=True, lang="en")
+# local_llm_url = os.getenv("LOCAL_LLM_URL")
 
 
 def generate_image_summary(bucket_name, key):
@@ -95,45 +95,45 @@ def use_pytesseract(image_file):
     return summary
 
 
-def call_local_llm(content, model_name="llama3.1:latest"):
-    prompt = f"""Below is the result of an OCR from a table:
-    {content}
-    
-    
-    The numbers in the array is the bounding box coordinate in the image for the text below it.
-    
-    # Instruction
-    1. Format the text according to the bounding box information so that human can read it easily. Make sure not to leave out any information from the table. Do NOT put the bounding boxes because they are confusing.
-    2. IMPORTANT: the information should be laid out correctly. If not, it will give a wrong interpretation. Make sure to double check.
-    3. Transform the information in the table above into a paragraph detailing ALL information in the table and do not add any additional information or make up any information.
-    """
-
-    payload = {
-        "model": model_name,
-        "prompt": prompt,
-        "stream": False,
-        "options": {"temperature": 0, "num_ctx": 10000},
-    }
-    response = requests.post(local_llm_url, json=payload)
-
-    response_json = response.json()
-
-    response_text = response_json.get("response")
-
-    return response_text
-
-
-def use_paddleocr(image_file):
-    result = ocr.ocr(image_file, cls=True)
-    img_content = ""
-    for i in result[0]:
-        bb = i[0]
-        text = i[1][0]
-        img_content += bb + "\n" + text + "\n"
-
-    summary = call_local_llm(img_content)
-
-    return summary
+# def call_local_llm(content, model_name="llama3.1:latest"):
+#     prompt = f"""Below is the result of an OCR from a table:
+#     {content}
+#
+#
+#     The numbers in the array is the bounding box coordinate in the image for the text below it.
+#
+#     # Instruction
+#     1. Format the text according to the bounding box information so that human can read it easily. Make sure not to leave out any information from the table. Do NOT put the bounding boxes because they are confusing.
+#     2. IMPORTANT: the information should be laid out correctly. If not, it will give a wrong interpretation. Make sure to double check.
+#     3. Transform the information in the table above into a paragraph detailing ALL information in the table and do not add any additional information or make up any information.
+#     """
+#
+#     payload = {
+#         "model": model_name,
+#         "prompt": prompt,
+#         "stream": False,
+#         "options": {"temperature": 0, "num_ctx": 10000},
+#     }
+#     response = requests.post(local_llm_url, json=payload)
+#
+#     response_json = response.json()
+#
+#     response_text = response_json.get("response")
+#
+#     return response_text
+#
+#
+# def use_paddleocr(image_file):
+#     result = ocr.ocr(image_file, cls=True)
+#     img_content = ""
+#     for i in result[0]:
+#         bb = i[0]
+#         text = i[1][0]
+#         img_content += bb + "\n" + text + "\n"
+#
+#     summary = call_local_llm(img_content)
+#
+#     return summary
 
 
 def extract_using_pymupdf(temp_pdf):
@@ -189,8 +189,8 @@ def extract_whole_content(pdf_file, use_tesseract=True):
                         summary = None
                         try:
                             if use_tesseract:
-                                # summary = use_pytesseract(local_image_file)
-                                summary = use_paddleocr(local_image_file)
+                                summary = use_pytesseract(local_image_file)
+                                # summary = use_paddleocr(local_image_file)
                         except Exception as e:
                             logger.error(
                                 f"Exception occurred while using Tesseract: {e}"
