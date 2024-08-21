@@ -129,7 +129,7 @@ def use_paddleocr(image_file):
     for i in result[0]:
         bb = i[0]
         text = i[1][0]
-        img_content += bb + "\n" + text + "\n"
+        img_content += str(bb) + "\n" + str(text) + "\n"
 
     summary = call_local_llm(img_content)
 
