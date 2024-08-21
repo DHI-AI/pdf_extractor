@@ -1,6 +1,6 @@
-import nltk
+# import nltk
 
-nltk.download("punkt")
+# nltk.download("punkt")
 
 import fitz
 import logging
