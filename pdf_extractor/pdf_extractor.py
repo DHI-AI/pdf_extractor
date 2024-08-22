@@ -17,6 +17,8 @@ from dotenv import load_dotenv
 from paddleocr import PaddleOCR
 import requests
 
+logging.getLogger().handlers.clear()
+
 logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO)
 load_dotenv()
