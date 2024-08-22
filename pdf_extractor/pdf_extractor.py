@@ -1,3 +1,6 @@
+import nltk
+nltk.download('punkt_tab')
+
 import fitz
 import logging
 from unstructured.partition.pdf import partition_pdf
@@ -21,7 +24,7 @@ logging.basicConfig(level=logging.INFO)
 load_dotenv()
 
 openai.api_key = os.environ.get("OPENAI_API_KEY")
-
+ocr = PaddleOCR(use_angle_cls=True, lang="en")
 local_llm_url = os.getenv("LOCAL_LLM_URL")
 
 
@@ -127,7 +130,6 @@ def call_local_llm(content, model_name="llama3.1:latest"):
 def use_paddleocr(image_file):
     try:
         logger.info('Using PaddleOCR for extracting text from tables..')
-        ocr = PaddleOCR(use_angle_cls=True, lang="en")
         result = ocr.ocr(image_file, cls=True)
         img_content = ""
         for i in result[0]:
