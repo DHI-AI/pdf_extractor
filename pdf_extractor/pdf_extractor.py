@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from paddleocr import PaddleOCR
 import requests
 
+# because PaddleOCR overrides the default logger, clear all handlers and create new
 logging.getLogger().handlers.clear()
 
 logger = logging.getLogger()
