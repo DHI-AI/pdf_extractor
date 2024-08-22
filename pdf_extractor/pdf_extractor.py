@@ -126,6 +126,7 @@ def call_local_llm(content, model_name="llama3.1:latest"):
 
 def use_paddleocr(image_file):
     try:
+        logger.info('Using PaddleOCR for extracting text from tables..')
         ocr = PaddleOCR(use_angle_cls=True, lang="en")
         result = ocr.ocr(image_file, cls=True)
         img_content = ""
@@ -138,6 +139,7 @@ def use_paddleocr(image_file):
 
         return summary
     except Exception as e:
+        logger.error(str(e))
         raise Exception(str(e))
 
 
@@ -176,8 +178,10 @@ def extract_whole_content(pdf_file, use_tesseract=True):
                 extract_image_block_to_payload=True,
             )
             content = ""
+            logger.info(f'Extracted all the elements of length: {len(elements)}')
             for element in elements:
                 if element.category == "Table":
+                    logger.info('Found a table in the PDF..')
                     if element.metadata.image_base64:
 
                         # Decode the base64 image
