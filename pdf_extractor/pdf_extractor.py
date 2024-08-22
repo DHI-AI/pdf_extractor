@@ -241,6 +241,7 @@ def extract_whole_content(pdf_file, use_tesseract=True):
             content = extract_using_pymupdf(pdf_file)
         return content
     except Exception as e:
+        logger.error(f'Exception occurred while extracting content:{str(e)}')
         raise Exception(e)
 
 
