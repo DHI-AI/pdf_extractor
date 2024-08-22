@@ -109,78 +109,79 @@ def extract_whole_content(pdf_file, use_tesseract=True):
     try:
         page_nos = count_pages(pdf_file)
         logger.info(f"Total no of pages: {str(page_nos)}.")
-        if page_nos < 80:
-            elements = partition_pdf(
-                filename=pdf_file,
-                strategy="hi_res",
-                extract_images_in_pdf=True,
-                extract_image_block_types=["Table", "Image"],
-                extract_image_block_to_payload=True,
-            )
-            content = ""
-            logger.info(f'Extracted all the elements of length: {len(elements)}')
-            for element in elements:
-                if element.category == "Table":
-                    if element.metadata.image_base64:
-
-                        # Decode the base64 image
-                        image_data = b64decode(element.metadata.image_base64)
-                        image = Image.open(BytesIO(image_data))
-
-                        # Create a unique local file name
-                        local_image_file = "pdf-temp-image.jpg"
-
-                        # Save the image locally as a .jpg file
-                        image.save(local_image_file, format="JPEG")
-
-                        # For now using pytesseract is default True, if you want to use only GPT pass use_tesseract = False
-                        summary = None
-                        try:
-                            if use_tesseract:
-                                summary = use_pytesseract(local_image_file)
-                        except Exception as e:
-                            logger.error(
-                                f"Exception occurred while using Tesseract: {e}"
-                            )
-                            upload_to_s3(
-                                local_image_file,
-                                os.environ.get("PUBLIC_S3_BUCKET"),
-                                "temp_images/pdf-temp-image.jpg",
-                            )
-                            summary = generate_image_summary(
-                                os.environ.get("PUBLIC_S3_BUCKET"),
-                                "temp_images/pdf-temp-image.jpg",
-                            )
-
-                        if summary is None or not pytesseract:
-                            # Upload to S3
-                            upload_to_s3(
-                                local_image_file,
-                                os.environ.get("PUBLIC_S3_BUCKET"),
-                                "temp_images/pdf-temp-image.jpg",
-                            )
-                            summary = generate_image_summary(
-                                os.environ.get("PUBLIC_S3_BUCKET"),
-                                "temp_images/pdf-temp-image.jpg",
-                            )
-                        if summary:
-                            content += f"\n\n{str(summary)}"
-                        os.remove(local_image_file)
-                if element.category == "Image":
-                    image_text = element.text
-                    if image_text:
-                        content += f"\n\n{str(image_text)}"
-                if element.category not in [
-                    "Image",
-                    "Table",
-                    "Footer",
-                    "Header",
-                    "FigureCaption",
-                ]:
-                    content += f"\n\n{str(element)}"
-        else:
-            logger.info("Page number > 80...")
-            content = extract_using_pymupdf(pdf_file)
+        # if page_nos < 80:
+        #     elements = partition_pdf(
+        #         filename=pdf_file,
+        #         strategy="hi_res",
+        #         hi_res_model_name="yolox",
+        #         extract_images_in_pdf=True,
+        #         extract_image_block_types=["Table", "Image"],
+        #         extract_image_block_to_payload=True,
+        #     )
+        #     content = ""
+        #     logger.info(f'Extracted all the elements of length: {len(elements)}')
+        #     for element in elements:
+        #         if element.category == "Table":
+        #             if element.metadata.image_base64:
+        #
+        #                 # Decode the base64 image
+        #                 image_data = b64decode(element.metadata.image_base64)
+        #                 image = Image.open(BytesIO(image_data))
+        #
+        #                 # Create a unique local file name
+        #                 local_image_file = "pdf-temp-image.jpg"
+        #
+        #                 # Save the image locally as a .jpg file
+        #                 image.save(local_image_file, format="JPEG")
+        #
+        #                 # For now using pytesseract is default True, if you want to use only GPT pass use_tesseract = False
+        #                 summary = None
+        #                 try:
+        #                     if use_tesseract:
+        #                         summary = use_pytesseract(local_image_file)
+        #                 except Exception as e:
+        #                     logger.error(
+        #                         f"Exception occurred while using Tesseract: {e}"
+        #                     )
+        #                     upload_to_s3(
+        #                         local_image_file,
+        #                         os.environ.get("PUBLIC_S3_BUCKET"),
+        #                         "temp_images/pdf-temp-image.jpg",
+        #                     )
+        #                     summary = generate_image_summary(
+        #                         os.environ.get("PUBLIC_S3_BUCKET"),
+        #                         "temp_images/pdf-temp-image.jpg",
+        #                     )
+        #
+        #                 if summary is None or not pytesseract:
+        #                     # Upload to S3
+        #                     upload_to_s3(
+        #                         local_image_file,
+        #                         os.environ.get("PUBLIC_S3_BUCKET"),
+        #                         "temp_images/pdf-temp-image.jpg",
+        #                     )
+        #                     summary = generate_image_summary(
+        #                         os.environ.get("PUBLIC_S3_BUCKET"),
+        #                         "temp_images/pdf-temp-image.jpg",
+        #                     )
+        #                 if summary:
+        #                     content += f"\n\n{str(summary)}"
+        #                 os.remove(local_image_file)
+        #         if element.category == "Image":
+        #             image_text = element.text
+        #             if image_text:
+        #                 content += f"\n\n{str(image_text)}"
+        #         if element.category not in [
+        #             "Image",
+        #             "Table",
+        #             "Footer",
+        #             "Header",
+        #             "FigureCaption",
+        #         ]:
+        #             content += f"\n\n{str(element)}"
+        # else:
+        #     logger.info("Page number > 80...")
+        content = extract_using_pymupdf(pdf_file)
         return content
     except Exception as e:
         logger.error(f'Exception occurred while extracting content:{str(e)}')
