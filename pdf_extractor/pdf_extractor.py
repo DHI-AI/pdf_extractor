@@ -113,27 +113,33 @@ def call_local_llm(content, model_name="llama3.1:latest"):
         "stream": False,
         "options": {"temperature": 0, "num_ctx": 10000},
     }
-    response = requests.post(local_llm_url, json=payload)
+    try:
+        response = requests.post(local_llm_url, json=payload, timeout=120)
 
-    response_json = response.json()
+        response_json = response.json()
 
-    response_text = response_json.get("response")
+        response_text = response_json.get("response")
 
-    return response_text
+        return response_text
+    except requests.exceptions.Timeout:
+        raise Exception("The request timed out after 120 seconds.")
 
 
 def use_paddleocr(image_file):
-    ocr = PaddleOCR(use_angle_cls=True, lang="en")
-    result = ocr.ocr(image_file, cls=True)
-    img_content = ""
-    for i in result[0]:
-        bb = i[0]
-        text = i[1][0]
-        img_content += str(bb) + "\n" + str(text) + "\n"
+    try:
+        ocr = PaddleOCR(use_angle_cls=True, lang="en")
+        result = ocr.ocr(image_file, cls=True)
+        img_content = ""
+        for i in result[0]:
+            bb = i[0]
+            text = i[1][0]
+            img_content += str(bb) + "\n" + str(text) + "\n"
 
-    summary = call_local_llm(img_content)
+        summary = call_local_llm(img_content)
 
-    return summary
+        return summary
+    except Exception as e:
+        raise Exception(str(e))
 
 
 def extract_using_pymupdf(temp_pdf):
