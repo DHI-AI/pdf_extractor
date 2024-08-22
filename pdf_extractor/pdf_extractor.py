@@ -1,7 +1,3 @@
-# import nltk
-
-# nltk.download("punkt")
-
 import fitz
 import logging
 from unstructured.partition.pdf import partition_pdf
