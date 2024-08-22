@@ -1,7 +1,3 @@
-import nltk
-nltk.download('punkt_tab')
-nltk.download('averaged_perceptron_tagger_eng')
-
 import fitz
 import logging
 from unstructured.partition.pdf import partition_pdf
@@ -20,8 +16,6 @@ logging.basicConfig(level=logging.INFO)
 load_dotenv()
 
 openai.api_key = os.environ.get("OPENAI_API_KEY")
-local_llm_url = os.getenv("LOCAL_LLM_URL")
-
 
 def generate_image_summary(bucket_name, key):
     response = openai.chat.completions.create(
@@ -119,7 +113,6 @@ def extract_whole_content(pdf_file, use_tesseract=True):
             elements = partition_pdf(
                 filename=pdf_file,
                 strategy="hi_res",
-                hi_res_model_name="yolox",
                 extract_images_in_pdf=True,
                 extract_image_block_types=["Table", "Image"],
                 extract_image_block_to_payload=True,
@@ -128,7 +121,6 @@ def extract_whole_content(pdf_file, use_tesseract=True):
             logger.info(f'Extracted all the elements of length: {len(elements)}')
             for element in elements:
                 if element.category == "Table":
-                    logger.info('Found a table in the PDF..')
                     if element.metadata.image_base64:
 
                         # Decode the base64 image
