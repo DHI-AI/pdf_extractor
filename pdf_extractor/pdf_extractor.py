@@ -93,19 +93,8 @@ def use_pytesseract(image_file):
     return summary
 
 
-def call_local_llm(content, model_name="llama3.1:latest"):
-    prompt = f"""Below is the result of an OCR from a table:
-    {content}
-
-
-    The numbers in the array is the bounding box coordinate in the image for the text below it.
-
-    # Instruction
-    1. Format the text according to the bounding box information so that human can read it easily. Make sure not to leave out any information from the table. Do NOT put the bounding boxes because they are confusing.
-    2. IMPORTANT: the information should be laid out correctly. If not, it will give a wrong interpretation. Make sure to double check.
-    3. Transform the information in the table above into a paragraph detailing ALL information in the table and do not add any additional information or make up any information.
-    """
-
+def call_local_llm(content, prompt, model_name="llama3.1:latest"):
+    prompt = prompt.format(content=content)
     payload = {
         "model": model_name,
         "prompt": prompt,
@@ -124,7 +113,7 @@ def call_local_llm(content, model_name="llama3.1:latest"):
         raise Exception("The request timed out after 120 seconds.")
 
 
-def use_paddleocr(image_file):
+def use_paddleocr(image_file, prompt, model_name):
     try:
         logger.info("Using PaddleOCR for extracting text from tables..")
         result = ocr.ocr(image_file)
@@ -134,7 +123,7 @@ def use_paddleocr(image_file):
             text = i[1][0]
             img_content += str(bb) + "\n" + str(text) + "\n"
 
-        summary = call_local_llm(img_content)
+        summary = call_local_llm(img_content, prompt, model_name)
 
         return summary
     except Exception as e:
@@ -163,7 +152,9 @@ def count_pages(pdf_path):
     return doc.page_count
 
 
-def extract_whole_content(pdf_file, use_tesseract=True):
+def extract_whole_content(
+    pdf_file, table_extraction_prompt, local_llm_model, use_tesseract=True
+):
     try:
         page_nos = count_pages(pdf_file)
         logger.info(f"Total no of pages: {str(page_nos)}.")
@@ -198,7 +189,11 @@ def extract_whole_content(pdf_file, use_tesseract=True):
                         try:
                             if use_tesseract:
                                 # summary = use_pytesseract(local_image_file)
-                                summary = use_paddleocr(local_image_file)
+                                summary = use_paddleocr(
+                                    local_image_file,
+                                    table_extraction_prompt,
+                                    local_llm_model,
+                                )
                         except Exception as e:
                             logger.error(
                                 f"Exception occurred while using Tesseract: {e}"
