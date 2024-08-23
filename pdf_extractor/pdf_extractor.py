@@ -18,11 +18,11 @@ logging.getLogger().handlers.clear()
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO)
-load_dotenv()
+# load_dotenv()
 
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 ocr = PaddleOCR(use_angle_cls=True, lang="en")
-local_llm_url = os.getenv("LOCAL_LLM_URL")
+local_llm_url = os.environ.get("LOCAL_LLM_URL")
 
 
 def generate_image_summary(bucket_name, key):
