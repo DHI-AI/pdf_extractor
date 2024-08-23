@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 # load_dotenv()
 
 openai.api_key = os.environ.get("OPENAI_API_KEY")
-ocr = PaddleOCR(use_angle_cls=True, lang="en", use_gpu=False)
+ocr = PaddleOCR(lang="en", use_gpu=False)
 local_llm_url = os.environ.get("LOCAL_LLM_URL")
 
 
@@ -126,8 +126,8 @@ def call_local_llm(content, model_name="llama3.1:latest"):
 
 def use_paddleocr(image_file):
     try:
-        logger.info('Using PaddleOCR for extracting text from tables..')
-        result = ocr.ocr(image_file, cls=True)
+        logger.info("Using PaddleOCR for extracting text from tables..")
+        result = ocr.ocr(image_file)
         img_content = ""
         for i in result[0]:
             bb = i[0]
@@ -177,10 +177,10 @@ def extract_whole_content(pdf_file, use_tesseract=True):
                 extract_image_block_to_payload=True,
             )
             content = ""
-            logger.info(f'Extracted all the elements of length: {len(elements)}')
+            logger.info(f"Extracted all the elements of length: {len(elements)}")
             for element in elements:
                 if element.category == "Table":
-                    logger.info('Found a table in the PDF..')
+                    logger.info("Found a table in the PDF..")
                     if element.metadata.image_base64:
 
                         # Decode the base64 image
@@ -244,7 +244,7 @@ def extract_whole_content(pdf_file, use_tesseract=True):
             content = extract_using_pymupdf(pdf_file)
         return content
     except Exception as e:
-        logger.error(f'Exception occurred while extracting content:{str(e)}')
+        logger.error(f"Exception occurred while extracting content:{str(e)}")
         raise Exception(e)
 
 
