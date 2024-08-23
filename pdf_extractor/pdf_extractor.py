@@ -10,20 +10,12 @@ import os
 from base64 import b64decode
 from io import BytesIO
 from dotenv import load_dotenv
-from paddleocr import PaddleOCR
-import requests
-
-# because PaddleOCR overrides the default logger, clear all handlers and create new
-logging.getLogger().handlers.clear()
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO)
 # load_dotenv()
 
 openai.api_key = os.environ.get("OPENAI_API_KEY")
-ocr = PaddleOCR(lang="en", use_gpu=False)
-local_llm_url = os.environ.get("LOCAL_LLM_URL")
-
 
 def generate_image_summary(bucket_name, key):
     response = openai.chat.completions.create(
@@ -92,45 +84,6 @@ def use_pytesseract(image_file):
     summary = response.choices[0].message.content
     return summary
 
-
-def call_local_llm(content, prompt, model_name="llama3.1:latest"):
-    prompt = prompt.format(content=content)
-    payload = {
-        "model": model_name,
-        "prompt": prompt,
-        "stream": False,
-        "options": {"temperature": 0, "num_ctx": 10000},
-    }
-    try:
-        response = requests.post(local_llm_url, json=payload, timeout=120)
-
-        response_json = response.json()
-
-        response_text = response_json.get("response")
-
-        return response_text
-    except requests.exceptions.Timeout:
-        raise Exception("The request timed out after 120 seconds.")
-
-
-def use_paddleocr(image_file, prompt, model_name):
-    try:
-        logger.info("Using PaddleOCR for extracting text from tables..")
-        result = ocr.ocr(image_file)
-        img_content = ""
-        for i in result[0]:
-            bb = i[0]
-            text = i[1][0]
-            img_content += str(bb) + "\n" + str(text) + "\n"
-
-        summary = call_local_llm(img_content, prompt, model_name)
-
-        return summary
-    except Exception as e:
-        logger.error(str(e))
-        raise Exception(str(e))
-
-
 def extract_using_pymupdf(temp_pdf):
     logger.info(f"Extracting using pymupdf: {temp_pdf}")
     doc = fitz.open(temp_pdf)
@@ -152,9 +105,7 @@ def count_pages(pdf_path):
     return doc.page_count
 
 
-def extract_whole_content(
-    pdf_file, table_extraction_prompt, local_llm_model, use_tesseract=True
-):
+def extract_whole_content(pdf_file, use_tesseract=True):
     try:
         page_nos = count_pages(pdf_file)
         logger.info(f"Total no of pages: {str(page_nos)}.")
@@ -168,10 +119,9 @@ def extract_whole_content(
                 extract_image_block_to_payload=True,
             )
             content = ""
-            logger.info(f"Extracted all the elements of length: {len(elements)}")
+            logger.info(f'Extracted all the elements of length: {len(elements)}')
             for element in elements:
                 if element.category == "Table":
-                    logger.info("Found a table in the PDF..")
                     if element.metadata.image_base64:
 
                         # Decode the base64 image
@@ -188,12 +138,7 @@ def extract_whole_content(
                         summary = None
                         try:
                             if use_tesseract:
-                                # summary = use_pytesseract(local_image_file)
-                                summary = use_paddleocr(
-                                    local_image_file,
-                                    table_extraction_prompt,
-                                    local_llm_model,
-                                )
+                                summary = use_pytesseract(local_image_file)
                         except Exception as e:
                             logger.error(
                                 f"Exception occurred while using Tesseract: {e}"
@@ -239,7 +184,7 @@ def extract_whole_content(
             content = extract_using_pymupdf(pdf_file)
         return content
     except Exception as e:
-        logger.error(f"Exception occurred while extracting content:{str(e)}")
+        logger.error(f'Exception occurred while extracting content:{str(e)}')
         raise Exception(e)
 
 
