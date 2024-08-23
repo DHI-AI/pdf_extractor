@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO)
-load_dotenv()
+# load_dotenv()
 
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
