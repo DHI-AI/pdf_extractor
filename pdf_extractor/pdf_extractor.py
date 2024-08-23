@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 # load_dotenv()
 
 openai.api_key = os.environ.get("OPENAI_API_KEY")
-ocr = PaddleOCR(use_angle_cls=True, lang="en")
+ocr = PaddleOCR(use_angle_cls=True, lang="en", use_gpu=False)
 local_llm_url = os.environ.get("LOCAL_LLM_URL")
 
 
