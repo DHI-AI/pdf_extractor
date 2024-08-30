@@ -17,6 +17,7 @@ logging.basicConfig(level=logging.INFO)
 # load_dotenv()
 
 openai.api_key = os.environ.get("OPENAI_API_KEY")
+logger.info(f'API KEY: {os.environ.get("OPENAI_API_KEY")}')
 local_llm_url = os.environ.get("LOCAL_LLM_URL")
 table_extraction_prompt = """Below is the result of an extracted text from a table image:
     {content}
@@ -36,6 +37,8 @@ def call_local_llm(content, model_name="llama3.1:latest"):
         "options": {"temperature": 0, "num_ctx": 10000},
     }
     try:
+        logger.info('Sending Request to LLM GPU server...')
+        logger.info(f'Local LLM URL: {local_llm_url}')
         response = requests.post(local_llm_url, json=payload, timeout=120)
 
         response_json = response.json()
