@@ -228,6 +228,3 @@ def extract_by_components(pdf_file):
         return all_components
     except Exception as e:
         raise Exception(e)
-
-
-extract_whole_content('/home/sarita/Downloads/02200521.pdf')
