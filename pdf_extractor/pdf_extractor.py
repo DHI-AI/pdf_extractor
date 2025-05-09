@@ -112,8 +112,6 @@ def extract_using_pymupdf(temp_pdf):
             texts.append(text)
 
     content = ",".join(texts).replace("'", "")
-    if not content:
-        logger.error(f"Failed to extract {temp_pdf}")
     doc.close()
     return content
 
@@ -195,7 +193,7 @@ def extract_whole_content(pdf_file):
         return content
     except Exception as e:
         logger.error(f'Exception occurred while extracting content:{str(e)}')
-        raise Exception(e)
+        return None
 
 
 def extract_by_components(pdf_file):
