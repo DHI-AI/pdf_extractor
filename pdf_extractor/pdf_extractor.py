@@ -212,6 +212,7 @@ def extract_by_components(pdf_file):
                 image_base64 = element.metadata.image_base64
                 all_components.append(
                     {
+                        "page_number": element.metadata.page_number,
                         "sequence_id": sequence_id,
                         "content_type": "image",
                         "disclosure_content_image": image_base64,
@@ -220,6 +221,7 @@ def extract_by_components(pdf_file):
             else:
                 all_components.append(
                     {
+                        "page_number": element.metadata.page_number,
                         "sequence_id": sequence_id,
                         "content_type": "text",
                         "content_text": element.text,
@@ -229,3 +231,10 @@ def extract_by_components(pdf_file):
         return all_components
     except Exception as e:
         raise Exception(e)
+
+
+if __name__ == "__main__":
+    # Example usage
+    pdf_file = "1.pdf"
+    components = extract_by_components(pdf_file)
+    print(components)
